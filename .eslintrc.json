@@ -1,0 +1,24 @@
+{
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": [
+        "standard"
+    ],
+    "parserOptions": {
+        "ecmaVersion": "latest"
+    },
+    "rules": {
+        "semi": 0,
+        "quotes": 0,
+        "comma-dangle": 0,
+        "space-before-function-paren": 0,
+        "one-var": 0,
+        "prefer-promise-reject-errors": 0,
+        "no-trailing-spaces": 1,
+        "eol-last": 1,
+        "no-void": 1,
+        "no-unused-vars": 1
+    }
+}

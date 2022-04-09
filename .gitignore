@@ -1,0 +1,11 @@
+node_modules/
+temp/
+tmp/
+*.log
+
+/upload.cmd
+/appconfig.json
+/test.js
+
+
+
