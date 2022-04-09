@@ -4,7 +4,7 @@ tmp/
 *.log
 
 /upload.cmd
-/appconfig.json
+/src/appconfig.json
 /test.js
 
 

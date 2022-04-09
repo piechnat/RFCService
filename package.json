@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "commonjs",
   "description": "Remote Function Call Service for TurboFryderyk 2.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node src/index.js",
     "test": "node test.js"
   },
   "author": "Mateusz Piechnat",
