@@ -90,6 +90,12 @@ exports.verifySession = function (session) {
   return true;
 };
 
+exports.verifyLogin = function (session) {
+  if (!session.loggedIn) {
+    throw new Error("User not logged in!");
+  }
+};
+
 exports.getTopicHash = function (topic) {
   const words = topic
     .toLowerCase()

@@ -1,16 +1,16 @@
 const { app, DEV_MODE, debug, verifySession } = require("./modules/utils");
 const { json } = require("express");
-const fetchApi = require("./modules/fetchApi");
+const FetchApi = require("./modules/FetchApi");
 
 app.use(json());
 if (DEV_MODE) app.use(require("cors")());
 
 async function rfCall(fname, args, session) {
   verifySession(session);
-  if (typeof fetchApi[fname] !== "function" || fname.charAt(0) === "_") {
+  if (typeof FetchApi[fname] !== "function" || fname.charAt(0) === "_") {
     throw new Error("RFCService function does not exist!");
   }
-  return { value: await fetchApi[fname](...args, session), session: session };
+  return { value: await FetchApi[fname](...args, session), session: session };
 }
 
 app.post("/rfcservice", async (request, response) => {

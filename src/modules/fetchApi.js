@@ -1,7 +1,7 @@
 const cheerio = require("cheerio");
-const fetchLib = require("./fetchLib");
+const FetchLib = require("./FetchLib");
 const FryderykClient = require("./FryderykClient");
-const { dateFmt } = require("./utils");
+const { dateFmt, db, verifyLogin, getTopicHash } = require("./utils");
 
 /*
 lesson {
@@ -10,19 +10,19 @@ lesson {
   time: string,
   name: string,
   studentName: string,
-  subjectMod: boolean,
+  topicMod: boolean,
   attendMod: boolean,
-  subjectPrms: [lesson.id, subjectId: number],
+  topicPrms: [lesson.id, subjectId: number],
   timePrms: [lesson.timestamp, endTimestamp: number],
   attendPrms: [...[attendId: number, studentId: number]],
   attendance: number,
-  subject: string,
+  topic: string,
 }
 */
 
-const fetchApi = {};
+const FetchApi = {};
 
-fetchApi.getDayLessons = async function (session) {
+FetchApi.getDayLessons = async function (session) {
   const date = new Date(session.strdate);
   if (isNaN(date.getTime())) {
     throw new Error("Nieprawidłowa data w sesji!");
@@ -59,39 +59,39 @@ fetchApi.getDayLessons = async function (session) {
   return lessons;
 };
 
-fetchApi.getLessonDetails = async function (lessons, session) {
+FetchApi.getLessonDetails = async function (lessons, session) {
   const client = new FryderykClient(session);
   for (const lesson of lessons) {
     Object.assign(
       lesson,
-      await fetchLib.getLessonAttendance(lesson, client),
-      await fetchLib.getLessonSubject(lesson, client),
-      { subjectMod: false, attendMod: false }
+      await FetchLib.getLessonAttendance(lesson, client),
+      await FetchLib.getLessonTopic(lesson, client),
+      { topicMod: false, attendMod: false }
     );
   }
   return lessons;
 };
 
-fetchApi.setDayLessons = async function (lessons, session) {
+FetchApi.setDayLessons = async function (lessons, session) {
   const client = new FryderykClient(session);
   const result = [];
   for (const lesson of lessons) {
-    const attendRes = lesson.attendMod ? await fetchLib.setLessonAttendance(lesson, client) : true;
-    const subjectRes = lesson.subjectMod
-      ? await fetchLib.setLessonSubject(lesson, session.subjectField, client)
+    const attendRes = lesson.attendMod ? await FetchLib.setLessonAttendance(lesson, client) : true;
+    const topicRes = lesson.topicMod
+      ? await FetchLib.setLessonTopic(lesson, session.subjectField, client)
       : true;
-    if (attendRes && subjectRes) result.push(lesson.subjectPrms.join("|"));
+    if (attendRes && topicRes) result.push(lesson.topicPrms.join("|"));
   }
   return result;
 };
 
-fetchApi.getLessonInfo = async function (lessonId, session) {
+FetchApi.getLessonInfo = async function (lessonId, session) {
   const path = "/lessons/description/" + lessonId;
   const $ = cheerio.load(await new FryderykClient(session).fetch(path));
   return $(".description-view .section .text").first().html() || "(brak)";
 };
 
-fetchApi.getLastSubjects = async function (lessonId, timestamp, session) {
+FetchApi.getLastTopics = async function (lessonId, timestamp, session) {
   const $ = cheerio.load(await new FryderykClient(session).fetch("/lessons/subjects/" + lessonId));
   let result = "";
   $(`td[data-ss='${timestamp}']`)
@@ -111,41 +111,51 @@ fetchApi.getLastSubjects = async function (lessonId, timestamp, session) {
   return result || "(brak)";
 };
 
-fetchApi.getSubjectField = async function (subjectPrms, session) {
-  const path = "/lessons/subjects-edit/" + subjectPrms.join("/");
+FetchApi.getSubjectField = async function (topicPrms, session) {
+  const path = "/lessons/subjects-edit/" + topicPrms.join("/");
   return cheerio
     .load(await new FryderykClient(session).fetch(path))("#subject")
     .attr("name");
 };
 
-fetchApi.topicBaseAdd = async function (topic, session) {};
+const TOPICS = "topics";
 
-fetchApi.topicBaseFind = async function (search, session) {};
+const createRow = (topic, subject, session) => ({
+  id: getTopicHash(topic),
+  author: session.username,
+  domain: session.domain,
+  subject: subject,
+  content: topic,
+});
 
-fetchApi.synchronizeSubjectBase = function (clientAccess, clientList, session) {
-  return { access: 0, result: false };
-  /*
-  clientAccess = parseInt(clientAccess) || 0;
-  const userId = session.username + "@" + session.domain;
-  Fl.sheetDB.init().set(userId, new Date(), 2);
-  const serverAccess = parseInt(Fl.sheetDB.get(userId, 0)[0]) || 0;
-  if (clientAccess !== serverAccess) {
-    if (clientAccess > serverAccess) {
-      if (Array.isArray(clientList)) {
-        Fl.sheetDB.set(userId, [clientAccess, JSON.stringify(clientList)]);
-        return { access: clientAccess, result: true };
-      }
-    } else {
-      let serverList = Fl.sheetDB.get(userId, 1)[0];
-      try {
-        if (Array.isArray((serverList = JSON.parse(serverList)))) {
-          return { access: serverAccess, result: serverList };
-        }
-      } catch (e) {}
-    }
-  }
-  return { access: serverAccess, result: false };
-  */
+FetchApi.topicBaseFetch = async function (session) {
+  verifyLogin(session);
+  return await db(TOPICS).select().where({ author: session.username, domain: session.domain });
 };
 
-module.exports = fetchApi;
+FetchApi.topicBaseAdd = async function (topic, subject, session) {
+  verifyLogin(session);
+  const row = createRow(topic, subject, session);
+  await db(TOPICS).insert(row);
+  return row;
+};
+
+FetchApi.topicBaseDelete = async function (id, session) {
+  verifyLogin(session);
+  return await db(TOPICS).del().where("id", id);
+};
+
+FetchApi.topicBaseEdit = async function (id, topic, subject, session) {
+  verifyLogin(session);
+  const row = createRow(topic, subject, session);
+  await db(TOPICS).insert(row);
+  await db(TOPICS).del().where("id", id);
+  return row;
+};
+
+FetchApi.topicBaseFind = async function (query, session) {
+  verifyLogin(session);
+  throw new Error("Not implemented!");
+};
+
+module.exports = FetchApi;
