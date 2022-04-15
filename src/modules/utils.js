@@ -84,7 +84,7 @@ exports.verifySession = function (session) {
       .update(getSessionStamp(session))
       .digest("hex");
     if (hash !== session.loggedIn) {
-      throw new Error("Session signature error!");
+      throw new Error("Błąd podpisu sesji!");
     }
   }
   return true;
@@ -92,7 +92,7 @@ exports.verifySession = function (session) {
 
 exports.verifyLogin = function (session) {
   if (!session.loggedIn) {
-    throw new Error("User not logged in!");
+    throw new Error("Użytkownik niezalogowany!");
   }
 };
 

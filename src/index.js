@@ -8,7 +8,7 @@ if (DEV_MODE) app.use(require("cors")());
 async function rfCall(fname, args, session) {
   verifySession(session);
   if (typeof FetchApi[fname] !== "function" || fname.charAt(0) === "_") {
-    throw new Error("RFCService function does not exist!");
+    throw new Error("Funkcja RFCService nie istnieje!");
   }
   return { value: await FetchApi[fname](...args, session), session: session };
 }

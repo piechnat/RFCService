@@ -8,8 +8,8 @@ lesson {
   id: number,
   timestamp: number,
   time: string,
-  name: string,
-  studentName: string,
+  subject: string,
+  student: string,
   topicMod: boolean,
   attendMod: boolean,
   topicPrms: [lesson.id, subjectId: number],
@@ -47,8 +47,8 @@ FetchApi.getDayLessons = async function (session) {
         id: parseInt($block.data("url").match(/\d+/)) || 0,
         timestamp: new Date(ymd + " " + time).getTime() / 1000,
         time: time,
-        name: $name.children("a").text().trim(),
-        studentName: $name
+        subject: $name.children("a").text().trim(),
+        student: $name
           .children()
           .remove()
           .end()
@@ -136,19 +136,33 @@ FetchApi.topicBaseFetch = async function (session) {
 FetchApi.topicBaseAdd = async function (topic, subject, session) {
   verifyLogin(session);
   const row = createRow(topic, subject, session);
-  await db(TOPICS).insert(row);
+  try {
+    await db(TOPICS).insert(row);
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      throw new Error("Podany temat już istnieje w bazie!");
+    }
+    throw error;
+  }
   return row;
 };
 
-FetchApi.topicBaseDelete = async function (id, session) {
+FetchApi.topicBaseRemove = async function (id, session) {
   verifyLogin(session);
   return await db(TOPICS).del().where("id", id);
 };
 
-FetchApi.topicBaseEdit = async function (id, topic, subject, session) {
+FetchApi.topicBaseUpdate = async function (id, topic, subject, session) {
   verifyLogin(session);
   const row = createRow(topic, subject, session);
-  await db(TOPICS).insert(row);
+  try {
+    await db(TOPICS).insert(row);
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      throw new Error("Podany temat już istnieje w bazie!");
+    }
+    throw error;
+  }
   await db(TOPICS).del().where("id", id);
   return row;
 };
