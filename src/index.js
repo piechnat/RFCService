@@ -3,7 +3,9 @@ const { json } = require("express");
 const FetchApi = require("./modules/FetchApi");
 
 app.use(json());
-if (DEV_MODE) app.use(require("cors")());
+if (DEV_MODE) {
+  app.use(require("cors")());
+}
 
 async function rfCall(fname, args, session) {
   verifySession(session);

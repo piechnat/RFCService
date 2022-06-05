@@ -1,7 +1,7 @@
 const cheerio = require("cheerio");
 const FetchLib = require("./FetchLib");
 const FryderykClient = require("./FryderykClient");
-const { dateFmt, db, verifyLogin, getTopicHash } = require("./utils");
+const { dateFmt, db, verifyLogin, getTopicHash, getUserId } = require("./utils");
 
 /*
 lesson {
@@ -80,7 +80,9 @@ FetchApi.setDayLessons = async function (lessons, session) {
     const topicRes = lesson.topicMod
       ? await FetchLib.setLessonTopic(lesson, session.subjectField, client)
       : true;
-    if (attendRes && topicRes) result.push(lesson.topicPrms.join("|"));
+    if (attendRes && topicRes) {
+      result.push(lesson.topicPrms.join("|"));
+    }
   }
   return result;
 };
@@ -122,15 +124,14 @@ const TOPICS = "topics";
 
 const createRow = (topic, subject, session) => ({
   id: getTopicHash(topic),
-  author: session.username,
-  domain: session.domain,
+  author: getUserId(session),
   subject: subject,
   content: topic,
 });
 
 FetchApi.topicBaseFetch = async function (session) {
   verifyLogin(session);
-  return await db(TOPICS).select().where({ author: session.username, domain: session.domain });
+  return await db(TOPICS).where("author", getUserId(session));
 };
 
 FetchApi.topicBaseAdd = async function (topic, subject, session) {
@@ -156,20 +157,19 @@ FetchApi.topicBaseUpdate = async function (id, topic, subject, session) {
   verifyLogin(session);
   const row = createRow(topic, subject, session);
   try {
-    await db(TOPICS).insert(row);
+    await db(TOPICS).update(row).where("id", id);
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
-      throw new Error("Podany temat już istnieje w bazie!");
+      throw new Error("Już istnieje podobny temat w bazie!");
     }
     throw error;
   }
-  await db(TOPICS).del().where("id", id);
   return row;
 };
 
 FetchApi.topicBaseFind = async function (query, session) {
   verifyLogin(session);
-  throw new Error("Not implemented!");
+  return await db(TOPICS).where("content", "like", `%${query}%`).limit(10);
 };
 
 module.exports = FetchApi;

@@ -19,6 +19,7 @@
         "no-trailing-spaces": 1,
         "eol-last": 1,
         "no-void": 1,
-        "no-unused-vars": 1
+        "no-unused-vars": 1,
+        "curly": ["warn", "all"]
     }
 }
