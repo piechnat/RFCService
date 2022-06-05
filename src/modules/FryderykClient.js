@@ -56,8 +56,11 @@ module.exports = class FryderykClient {
     try {
       response = await axios(config);
     } catch (error) {
-      if (error.response) response = error.response;
-      else throw error;
+      if (error.response) {
+        response = error.response;
+      } else {
+        throw error;
+      }
     }
     const responseCode = response.status;
     const redirectUrl = response.headers.location;

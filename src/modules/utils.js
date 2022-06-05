@@ -7,7 +7,9 @@ exports.app = express();
 exports.DEV_MODE = exports.app.get("env") === "development";
 
 exports.debug = function () {
-  if (exports.DEV_MODE) console.log.apply(console, arguments);
+  if (exports.DEV_MODE) {
+    console.log.apply(console, arguments);
+  }
 };
 
 exports.db = require("knex").knex(appConf.dbConf);
@@ -30,7 +32,9 @@ const monthN = [
 ];
 
 exports.dateFmt = function (date, formatStr) {
-  if (!(date instanceof Date)) date = new Date(date);
+  if (!(date instanceof Date)) {
+    date = new Date(date);
+  }
   // parse function
   function pf(formatChar, dateFuncName, indexShift = 0) {
     const resultVal = (date["get" + dateFuncName]() + indexShift).toString();
@@ -84,10 +88,16 @@ exports.verifySession = function (session) {
       .update(getSessionStamp(session))
       .digest("hex");
     if (hash !== session.loggedIn) {
-      throw new Error("Session signature error!");
+      throw new Error("Błąd podpisu sesji!");
     }
   }
   return true;
+};
+
+exports.verifyLogin = function (session) {
+  if (!session.loggedIn) {
+    throw new Error("Użytkownik niezalogowany!");
+  }
 };
 
 exports.getTopicHash = function (topic) {

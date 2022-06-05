@@ -19,9 +19,9 @@ function urlSlice(url, begin, end) {
     .slice(begin, end);
 }
 
-const fetchLib = {};
+const FetchLib = {};
 
-fetchLib.getLessonAttendance = async function (lesson, client) {
+FetchLib.getLessonAttendance = async function (lesson, client) {
   const $ = cheerio.load(
     await client.fetch(`/lessons/attendance/${lesson.id}/${lesson.timestamp}`)
   );
@@ -38,19 +38,19 @@ fetchLib.getLessonAttendance = async function (lesson, client) {
   };
 };
 
-fetchLib.getLessonSubject = async function (lesson, client) {
+FetchLib.getLessonTopic = async function (lesson, client) {
   const $ = cheerio.load(await client.fetch("/lessons/subjects/" + lesson.id));
   const $link = $(`td[data-ss='${lesson.timestamp}']`).parent().find("a");
   if (!$link.length) {
     throw new Error("Temat zajęć niedostępny!");
   }
   return {
-    subject: $link.hasClass("text-light") ? "" : $link.text().trim(),
-    subjectPrms: urlSlice($link.attr("href"), 2),
+    topic: $link.hasClass("text-light") ? "" : $link.text().trim(),
+    topicPrms: urlSlice($link.attr("href"), 2),
   };
 };
 
-fetchLib.setLessonAttendance = async function (lesson, client) {
+FetchLib.setLessonAttendance = async function (lesson, client) {
   return (
     await client.fetchAll(
       lesson.attendPrms.map(
@@ -58,7 +58,7 @@ fetchLib.setLessonAttendance = async function (lesson, client) {
           "/lessons-attendances/set-single/" +
           [
             ...attendStud.split(","),
-            lesson.subjectPrms[0],
+            lesson.topicPrms[0],
             ...lesson.timePrms,
             lesson.attendance,
           ].join("/")
@@ -67,17 +67,17 @@ fetchLib.setLessonAttendance = async function (lesson, client) {
   ).every((response) => response.status === 200 && response.data?.type === lesson.attendance);
 };
 
-fetchLib.setLessonSubject = async function (lesson, subjectField, client) {
+FetchLib.setLessonTopic = async function (lesson, subjectField, client) {
   return (
     (await client.fetch(
-      "/lessons/subjects-edit/" + lesson.subjectPrms.join("/"),
+      "/lessons/subjects-edit/" + lesson.topicPrms.join("/"),
       {
         method: "post",
-        data: qs.stringify({ _method: "PUT", [subjectField]: lesson.subject }),
+        data: qs.stringify({ _method: "PUT", [subjectField]: lesson.topic }),
       },
       true
     )) === 302
   );
 };
 
-module.exports = fetchLib;
+module.exports = FetchLib;
